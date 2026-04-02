@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalkulator HPP</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="container">
+    <h1>Kalkulator HPP</h1>
+
+    <!-- TABEL 1 -->
+    <h2>Bahan-Bahan</h2>
+    <table id="bahanTable">
+        <tr>
+            <th>Nama</th>
+            <th>Harga (Rp)</th>
+            <th>Satuan</th>
+            <th>Total Isi</th>
+            <th>Harga / Unit</th>
+        </tr>
+    </table>
+
+    <button onclick="tambahBahan()">+ Tambah Bahan</button>
+
+    <!-- TABEL 2 -->
+    <h2>Resep/Produk</h2>
+    <table id="resepTable">
+        <tr>
+            <th>Bahan</th>
+            <th>Pakai</th>
+            <th>Biaya</th>
+        </tr>
+    </table>
+
+    <button onclick="tambahResep()">+ Tambah Resep</button>
+
+    <!-- HASIL -->
+    <div class="hasil">
+        <button onclick="hitung()">Hitung HPP</button>
+        <p>Total Biaya: <span id="total">Rp 0</span></p>
+        <p>HPP per Produk: <span id="hpp">Rp 0</span></p>
+    </div>
+
+</div>
+
+<script>
+let bahanList = [];
+
+function parseAngka(value) {
+    if (!value) return 0;
+
+    // hapus titik (ribuan) dan ubah koma jadi titik
+    value = value.toString().replace(/\./g, "").replace(",", ".");
+    
+    return parseFloat(value) || 0;
+}
+
+function tambahBahan() {
+    let table = document.getElementById("bahanTable");
+    let row = table.insertRow();
+
+    row.innerHTML = `
+        <td><input type="text" class="nama"></td>
+        <td><input type="number" class="harga"></td>
+        <td>
+            <select class="satuan">
+                <option value="gram">Gram</option>
+                <option value="ml">ML</option>
+                <option value="pcs">PCS</option>
+            </select>
+        </td>
+        <td><input type="number" class="total"></td>
+        <td class="perunit">0</td>
+    `;
+}
+
+function updateBahan() {
+    bahanList = [];
+    let rows = document.querySelectorAll("#bahanTable tr");
+
+    rows.forEach((row, i) => {
+        if(i === 0) return;
+
+        let nama = row.querySelector(".nama").value;
+        let harga = parseAngka(row.querySelector(".harga").value);
+        let total = parseAngka(row.querySelector(".total").value);
+
+        let perunit = 0;
+        if(harga && total){
+            perunit = harga / total;
+        }
+
+        row.querySelector(".perunit").innerText = perunit.toFixed(2);
+
+        bahanList.push({
+            nama: nama,
+            perunit: perunit
+        });
+    });
+
+    updateDropdown();
+}
+
+function updateDropdown() {
+    let selects = document.querySelectorAll(".pilihBahan");
+
+    selects.forEach(select => {
+        let selectedText = select.options[select.selectedIndex]?.text; // simpan pilihan lama
+
+        select.innerHTML = "";
+
+        bahanList.forEach((b, i) => {
+            let opt = document.createElement("option");
+            opt.value = i;
+            opt.text = b.nama || "Bahan";
+            select.appendChild(opt);
+        });
+
+        // kembalikan pilihan lama
+        for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].text === selectedText) {
+                select.selectedIndex = i;
+                break;
+            }
+        }
+    });
+}
+function tambahResep() {
+    updateBahan();
+
+    let table = document.getElementById("resepTable");
+    let row = table.insertRow();
+
+    row.innerHTML = `
+        <td><select class="pilihBahan"></select></td>
+        <td><input type="number" class="pakai"></td>
+        <td class="biaya">0</td>
+    `;
+
+    updateDropdown();
+}
+
+function hitung() {
+    updateBahan();
+
+    let total = 0;
+    let rows = document.querySelectorAll("#resepTable tr");
+
+    rows.forEach((row, i) => {
+        if(i === 0) return;
+
+        let index = row.querySelector(".pilihBahan").value;
+        let pakai = parseAngka(row.querySelector(".pakai").value);
+
+        let biaya = 0;
+        if(bahanList[index] && pakai){
+            biaya = bahanList[index].perunit * pakai;
+        }
+
+        row.querySelector(".biaya").innerText = biaya.toFixed(2);
+        total += biaya;
+    });
+
+    document.getElementById("total").innerText = "Rp " + total.toLocaleString();
+    document.getElementById("hpp").innerText = "Rp " + total.toLocaleString();
+}
+</script>
+
+</body>
+</html>
